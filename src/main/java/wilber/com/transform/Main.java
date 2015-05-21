@@ -1,5 +1,6 @@
 package wilber.com.transform;
 
+import com.example.tutorial.AddressBookProtos.Person;
 import com.github.os72.protobuf.dynamic.DynamicSchema;
 import com.github.os72.protobuf.dynamic.MessageDefinition;
 import com.google.protobuf.*;
@@ -19,6 +20,23 @@ public class Main {
 
 			System.out.println("get scheduler builder: "
 					+ dynamicSchema.toString());
+
+			Person john = Person
+					.newBuilder()
+					.setId(1234)
+					.setName("John Doe")
+					.setEmail("jdoe@example.com")
+					.addPhone(
+							Person.PhoneNumber.newBuilder()
+									.setNumber("555-4321")
+									.setType(Person.PhoneType.HOME)).build();
+			
+			System.out.println("parse person message by compiled person schema:\n"
+					+ Person.parseFrom(john.toByteArray()).toString());
+
+			System.out.println("parse person message by dynamic schema:"
+					+ dynamicSchema.parseFrom(john.toByteArray()).toString());
+
 			// Create dynamic schema
 			DynamicSchema.Builder schemaBuilder = DynamicSchema.newBuilder();
 			schemaBuilder.setName("PersonSchemaDynamic.proto");
@@ -48,7 +66,7 @@ public class Main {
 					.setField(msgDesc.findFieldByName("email"), "at@sis.gov.uk")
 					.build();
 
-			// System.out.println(schema.parseFrom(msg.toByteArray()).toString());
+			System.out.println(schema.parseFrom(msg.toByteArray()).toString());
 		} catch (Exception ex) {
 			System.out.println("catch error with:" + ex.getMessage());
 		}
