@@ -4,11 +4,13 @@ import com.example.tutorial.AddressBookProtos.Person;
 import com.github.os72.protobuf.dynamic.DynamicSchema;
 import com.github.os72.protobuf.dynamic.EnumDefinition;
 import com.github.os72.protobuf.dynamic.MessageDefinition;
+import com.github.protobufel.grammar.ProtoFiles;
 import com.google.protobuf.*;
-import com.google.protobuf.Descriptors.*;
+import com.google.protobuf.Descriptors.FileDescriptor;
 
 import java.io.File;
 import java.io.InputStream;
+import java.util.Map;
 
 public class Main {
 
@@ -17,7 +19,10 @@ public class Main {
 		try {
 			// Create dynamic schema from proto file in resource
 			DynamicProtoSchemaBuilder dPBuilder = new DynamicProtoSchemaBuilder();
-			DynamicSchema dynamicSchema = dPBuilder.buildDynamicSchema().build();
+			dPBuilder.buildDynamicSchemaByDescript();
+
+			DynamicSchema dynamicSchema = dPBuilder.buildDynamicSchema()
+					.build();
 
 			System.out.println("get scheduler builder:\n"
 					+ dynamicSchema.toString());
@@ -32,8 +37,8 @@ public class Main {
 									.setNumber("555-4321")
 									.setType(Person.PhoneType.HOME)).build();
 
-			System.out
-					.println("Person message from static java code:\n" + john.toString() + "\n");
+			System.out.println("Person message from static java code:\n"
+					+ john.toString() + "\n");
 
 			System.out
 					.println("parse person message by static person schema:\n"
