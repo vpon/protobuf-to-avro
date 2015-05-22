@@ -25,8 +25,8 @@ public class Main {
 					.println("parse person message by static person schema:\n"
 							+ Person.parseFrom(john.toByteArray()).toString());
 
-			DynamicProtoSchemaBuilder dPBuilder = new DynamicProtoSchemaBuilder();
-			DynamicSchema schemaFromProtoFile = dPBuilder.buildDynamicSchema().build();
+			ProtoSchema dPBuilder = new ProtoSchema();
+			DynamicSchema schemaFromProtoFile = dPBuilder.getDynamicSchema();
 			System.out.println("try to parse from dynamic proto schema");
 			DynamicMessage.Builder msgBuilder = schemaFromProtoFile.newMessageBuilder("Person");
 			System.out.println("merge message");
