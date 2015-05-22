@@ -27,7 +27,7 @@ public class DynamicProtoSchemaBuilder {
 	private final String ENUM = "enum";
 	private String schemaName = null;
 
-	public DynamicSchema.Builder buildProtoSchema() throws IOException,
+	public DynamicSchema.Builder buildDynamicSchema() throws IOException,
 			StructureErrorException, UnSupportProtoFormatErrorException {
 		DynamicSchema.Builder schemaBuilder = DynamicSchema.newBuilder();
 		File protoFile = getProtoFile();
