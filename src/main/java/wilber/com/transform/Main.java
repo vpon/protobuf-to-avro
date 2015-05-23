@@ -9,7 +9,7 @@ import com.google.protobuf.DynamicMessage;
 public class Main {
 
 	static public void main(String[] args) {
-		System.out.println("start protobuf to avro");
+		System.out.println("start protobuf to avro process test");
 		try {
 			Person john = Person
 					.newBuilder()
@@ -27,8 +27,8 @@ public class Main {
 
 			ProtoSchema protoSchema = new ProtoSchema();
 			DynamicSchema dynamicSchema = protoSchema.getDynamicSchema();
-			System.out.println("get dynamic schema from .proto file:\n"
-					+ dynamicSchema.toString());
+			
+			
 			DynamicMessage.Builder msgBuilder = dynamicSchema
 					.newMessageBuilder("Person");
 			System.out.println("merge message");

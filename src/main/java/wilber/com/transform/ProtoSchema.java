@@ -84,11 +84,13 @@ public class ProtoSchema {
 		MessageDefinition.Builder msgBuilder = MessageDefinition
 				.newBuilder(msgType.getName());
 		for (MessageType.Field field : msgType.getFields()) {
-			if (field.getDefault() != null) {
-				
+			if (!field.getOptions().isEmpty()) {
+				Object defaultValue = Option.findByName(field.getOptions(),
+						"default").getValue();
+				String defaultString = getDefault(defaultValue);
 				msgBuilder.addField(field.getLabel().toString().toLowerCase()
 						.toLowerCase(Locale.US), field.getType(),
-						field.getName(), field.getTag(), field.getDefault());
+						field.getName(), field.getTag(), defaultString);
 			} else {
 				msgBuilder.addField(field.getLabel().toString().toLowerCase()
 						.toLowerCase(Locale.US), field.getType(),
@@ -108,6 +110,17 @@ public class ProtoSchema {
 			}
 		}
 		return msgBuilder.build();
+	}
+	
+	private String getDefault(Object defaultValue){
+		String defaultString = null;
+		
+		if (defaultValue instanceof EnumType.Value) {
+			defaultString = ((EnumType.Value) defaultValue).getName();
+		} else {
+			defaultString = (String) defaultValue;
+		}
+		return defaultString;
 	}
 
 	private EnumDefinition getEnumDefinition(EnumType enumType) {
