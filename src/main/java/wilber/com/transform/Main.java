@@ -1,10 +1,6 @@
 package wilber.com.transform;
 
 import com.example.tutorial.AddressBookProtos.Person;
-import com.github.os72.protobuf.dynamic.DynamicSchema;
-import com.github.os72.protobuf.dynamic.EnumDefinition;
-import com.github.os72.protobuf.dynamic.MessageDefinition;
-import com.google.protobuf.DynamicMessage;
 
 public class Main {
 
@@ -26,16 +22,7 @@ public class Main {
 							+ Person.parseFrom(john.toByteArray()).toString());
 
 			ProtoSchema protoSchema = new ProtoSchema();
-			DynamicSchema dynamicSchema = protoSchema.getDynamicSchema();
-			
-			
-			DynamicMessage.Builder msgBuilder = dynamicSchema
-					.newMessageBuilder("Person");
-			System.out.println("merge message");
-			DynamicMessage msg = msgBuilder.mergeFrom(john.toByteArray())
-					.build();
-
-			System.out.println("dynamic message parse:\n" + msg);
+			System.out.println("dynamic message parse:\n" + protoSchema.parse(john.toByteArray()));
 		} catch (Exception ex) {
 			System.out.println("catch error with:\n" + ex.toString());
 			ex.printStackTrace(System.out);

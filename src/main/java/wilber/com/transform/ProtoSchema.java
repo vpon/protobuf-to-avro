@@ -6,6 +6,7 @@ import com.github.os72.protobuf.dynamic.DynamicSchema.Builder;
 import com.github.os72.protobuf.dynamic.EnumDefinition;
 import com.github.os72.protobuf.dynamic.MessageDefinition;
 import com.google.protobuf.Descriptors;
+import com.google.protobuf.DynamicMessage;
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Descriptors.DescriptorValidationException;
 import com.google.protobuf.Descriptors.FieldDescriptor;
@@ -27,15 +28,19 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Stack;
 
+import javax.xml.validation.Schema;
+
 public class ProtoSchema {
 
 	private DynamicSchema dynamicSchema = null;
 	private ProtoFile protoFile = null;
+	private List<DynamicMessage.Builder> dMBuilder = new ArrayList<DynamicMessage.Builder>();
 
 	public ProtoSchema() throws DescriptorValidationException, IOException,
 			StructureErrorException, UnSupportProtoFormatErrorException {
 		ProtoFile protoFile = ProtoSchemaParser.parse(getProtoSourceFile());
 		dynamicSchema = getDynamicSchema(protoFile);
+		buildDmBuilder(protoFile.getTypes());
 	}
 
 	public ProtoSchema(String protoFilePath)
@@ -44,6 +49,40 @@ public class ProtoSchema {
 		ProtoFile protoFile = ProtoSchemaParser
 				.parse(getProtoSourceFile(protoFilePath));
 		dynamicSchema = getDynamicSchema(protoFile);
+		buildDmBuilder(protoFile.getTypes());
+	}
+
+	public DynamicMessage parse(byte[] msg)
+			throws InvalidProtocolBufferException,
+			UnSupportProtoFormatErrorException {
+		DynamicMessage.Builder msgBuilder = getProperDmBuilder(msg);
+		if (msgBuilder == null)
+			throw new UnSupportProtoFormatErrorException(
+					"cannot find proper schema for this protocol buffer message,"
+							+ " maybe provide worng schema file");
+
+		return msgBuilder.mergeFrom(msg).build();
+	}
+
+	private DynamicMessage.Builder getProperDmBuilder(byte[] msg) {
+		DynamicMessage.Builder properBuilder = null;
+		for (DynamicMessage.Builder untestedBuilder : dMBuilder) {
+			properBuilder = testDmBuilder(untestedBuilder, msg);
+			if(properBuilder != null) break;
+		}
+		return properBuilder;
+	}
+
+	private DynamicMessage.Builder testDmBuilder(
+			DynamicMessage.Builder testBuilder, byte[] msg) {
+		DynamicMessage.Builder properBuilder = null;
+		try {
+			testBuilder.mergeFrom(msg);
+			properBuilder = testBuilder;
+		} catch (InvalidProtocolBufferException e) {
+			e.printStackTrace(System.out);
+		}
+		return properBuilder;
 	}
 
 	public DynamicSchema getDynamicSchema() {
@@ -52,6 +91,14 @@ public class ProtoSchema {
 
 	public ProtoFile getProtoFile() {
 		return protoFile;
+	}
+
+	private void buildDmBuilder(List<Type> types) {
+		for (Type type : types) {
+			if (type instanceof MessageType) {
+				dMBuilder.add(dynamicSchema.newMessageBuilder(type.getName()));
+			}
+		}
 	}
 
 	private DynamicSchema getDynamicSchema(ProtoFile protoFile)
@@ -68,7 +115,6 @@ public class ProtoSchema {
 					MessageType msgType = (MessageType) type;
 					schemaBuilder
 							.addMessageDefinition(getMsgDefinition(msgType));
-
 				} else if (type instanceof EnumType) {
 					EnumType enumType = (EnumType) type;
 					schemaBuilder
@@ -111,10 +157,10 @@ public class ProtoSchema {
 		}
 		return msgBuilder.build();
 	}
-	
-	private String getDefault(Object defaultValue){
+
+	private String getDefault(Object defaultValue) {
 		String defaultString = null;
-		
+
 		if (defaultValue instanceof EnumType.Value) {
 			defaultString = ((EnumType.Value) defaultValue).getName();
 		} else {
