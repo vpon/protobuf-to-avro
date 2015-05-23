@@ -25,18 +25,20 @@ public class Main {
 					.println("parse person message by static person schema:\n"
 							+ Person.parseFrom(john.toByteArray()).toString());
 
-			ProtoSchema dPBuilder = new ProtoSchema();
-			DynamicSchema schemaFromProtoFile = dPBuilder.getDynamicSchema();
-			System.out.println("try to parse from dynamic proto schema");
-			DynamicMessage.Builder msgBuilder = schemaFromProtoFile.newMessageBuilder("Person");
+			ProtoSchema protoSchema = new ProtoSchema();
+			DynamicSchema dynamicSchema = protoSchema.getDynamicSchema();
+			System.out.println("get dynamic schema from .proto file:\n"
+					+ dynamicSchema.toString());
+			DynamicMessage.Builder msgBuilder = dynamicSchema
+					.newMessageBuilder("Person");
 			System.out.println("merge message");
-			DynamicMessage msg = msgBuilder.mergeFrom(john.toByteArray()).build();
-			
-			System.out.println("dynamic message parse:\n"
-					+ msg);
+			DynamicMessage msg = msgBuilder.mergeFrom(john.toByteArray())
+					.build();
+
+			System.out.println("dynamic message parse:\n" + msg);
 		} catch (Exception ex) {
-			System.out.println("catch error with:\n" + ex.getMessage() + "\n"
-					+ ex.toString());
+			System.out.println("catch error with:\n" + ex.toString());
+			ex.printStackTrace(System.out);
 		}
 	}
 }

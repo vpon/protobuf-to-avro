@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Stack;
 
@@ -58,22 +59,69 @@ public class ProtoSchema {
 			UnSupportProtoFormatErrorException, DescriptorValidationException {
 		DynamicSchema.Builder schemaBuilder = DynamicSchema.newBuilder();
 
+		schemaBuilder.setName(protoFile.getFileName());
+		schemaBuilder.setPackage(protoFile.getPackageName());
+
 		if (!protoFile.getTypes().isEmpty()) {
 			for (Type type : protoFile.getTypes()) {
 				if (type instanceof MessageType) {
-					System.out.println("get meeage type :\n" + type.getName());
-					for (Type ntype : type.getNestedTypes())
-						System.out.println("nested type:" + ntype.getClass());
+					MessageType msgType = (MessageType) type;
+					schemaBuilder
+							.addMessageDefinition(getMsgDefinition(msgType));
 
+				} else if (type instanceof EnumType) {
+					EnumType enumType = (EnumType) type;
+					schemaBuilder
+							.addEnumDefinition(getEnumDefinition(enumType));
 				}
 			}
 		}
-		;
 
 		return schemaBuilder.build();
 	}
 
-	public File getProtoSourceFile(String path) {
+	private MessageDefinition getMsgDefinition(MessageType msgType) {
+		MessageDefinition.Builder msgBuilder = MessageDefinition
+				.newBuilder(msgType.getName());
+		for (MessageType.Field field : msgType.getFields()) {
+			if (field.getDefault() != null) {
+				
+				msgBuilder.addField(field.getLabel().toString().toLowerCase()
+						.toLowerCase(Locale.US), field.getType(),
+						field.getName(), field.getTag(), field.getDefault());
+			} else {
+				msgBuilder.addField(field.getLabel().toString().toLowerCase()
+						.toLowerCase(Locale.US), field.getType(),
+						field.getName(), field.getTag());
+			}
+		}
+
+		for (Type nestedType : msgType.getNestedTypes()) {
+			if (nestedType instanceof MessageType) {
+				MessageType nestedMsgType = (MessageType) nestedType;
+				msgBuilder
+						.addMessageDefinition(getMsgDefinition(nestedMsgType));
+
+			} else if (nestedType instanceof EnumType) {
+				EnumType nestedEnumType = (EnumType) nestedType;
+				msgBuilder.addEnumDefinition(getEnumDefinition(nestedEnumType));
+			}
+		}
+		return msgBuilder.build();
+	}
+
+	private EnumDefinition getEnumDefinition(EnumType enumType) {
+		EnumDefinition.Builder enumBuilder = EnumDefinition.newBuilder(enumType
+				.getName());
+
+		for (EnumType.Value value : enumType.getValues()) {
+			enumBuilder.addValue(value.getName(), value.getTag());
+		}
+
+		return enumBuilder.build();
+	}
+
+	private File getProtoSourceFile(String path) {
 		File protof = null;
 		try {
 			protof = new File(path);
@@ -84,7 +132,7 @@ public class ProtoSchema {
 		return protof;
 	}
 
-	public File getProtoSourceFile() {
+	private File getProtoSourceFile() {
 		File protof = null;
 		ClassLoader classLoader = getClass().getClassLoader();
 		try {
