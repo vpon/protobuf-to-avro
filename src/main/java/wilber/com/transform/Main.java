@@ -1,6 +1,9 @@
 package wilber.com.transform;
 
+import org.apache.avro.generic.GenericRecord;
+
 import com.example.tutorial.AddressBookProtos.Person;
+import com.google.protobuf.DynamicMessage;
 
 public class Main {
 
@@ -17,12 +20,14 @@ public class Main {
 									.setNumber("555-4321")
 									.setType(Person.PhoneType.HOME)).build();
 
-			System.out
-					.println("parse person message by static person schema:\n"
-							+ Person.parseFrom(john.toByteArray()).toString());
+			ProtoToAvro protoSchema = new ProtoToAvro();
 
-			ProtoSchema protoSchema = new ProtoSchema();
-			System.out.println("dynamic message parse:\n" + protoSchema.parse(john.toByteArray()));
+			DynamicMessage msg = protoSchema.parse(john.toByteArray());
+			System.out.println("dynamic message parse:\n" + msg);
+
+			GenericRecord gr = protoSchema.protoToAvro(msg);
+			System.out.println("transform proto to avro:\n" + gr.toString());
+
 		} catch (Exception ex) {
 			System.out.println("catch error with:\n" + ex.toString());
 			ex.printStackTrace(System.out);

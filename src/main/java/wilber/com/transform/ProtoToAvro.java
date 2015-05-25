@@ -1,55 +1,182 @@
 package wilber.com.transform;
 
-import com.example.tutorial.AddressBookProtos.Person;
 import com.github.os72.protobuf.dynamic.DynamicSchema;
-import com.github.os72.protobuf.dynamic.DynamicSchema.Builder;
 import com.github.os72.protobuf.dynamic.EnumDefinition;
 import com.github.os72.protobuf.dynamic.MessageDefinition;
-import com.google.protobuf.Descriptors;
+import com.google.protobuf.ByteString;
 import com.google.protobuf.DynamicMessage;
-import com.google.protobuf.Descriptors.Descriptor;
+import com.google.protobuf.Message;
 import com.google.protobuf.Descriptors.DescriptorValidationException;
+import com.google.protobuf.Descriptors.EnumValueDescriptor;
 import com.google.protobuf.Descriptors.FieldDescriptor;
-import com.google.protobuf.Descriptors.FileDescriptor;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.squareup.protoparser.*;
 
-import org.apache.commons.lang3.StringUtils;
-
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileReader;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Stack;
 
-import javax.xml.validation.Schema;
+import org.apache.avro.Schema;
+import org.apache.avro.generic.GenericArray;
+import org.apache.avro.generic.GenericData;
+import org.apache.avro.generic.GenericEnumSymbol;
+import org.apache.avro.generic.GenericRecord;
 
-public class ProtoSchema {
+public class ProtoToAvro {
 
 	private DynamicSchema dynamicSchema = null;
 	private ProtoFile protoFile = null;
 	private List<DynamicMessage.Builder> dMBuilder = new ArrayList<DynamicMessage.Builder>();
+	private Schema avroSchema = null;
+	private DynamicMessage.Builder msgBuilder = null;
 
-	public ProtoSchema() throws DescriptorValidationException, IOException,
+	public ProtoToAvro() throws DescriptorValidationException, IOException,
 			StructureErrorException, UnSupportProtoFormatErrorException {
 		ProtoFile protoFile = ProtoSchemaParser.parse(getProtoSourceFile());
 		dynamicSchema = getDynamicSchema(protoFile);
 		buildDmBuilder(protoFile.getTypes());
+		avroSchema = new Schema.Parser().parse(getAvscSourceFile());
 	}
 
-	public ProtoSchema(String protoFilePath)
+	public ProtoToAvro(String protoFilePath, String avscFilePath)
 			throws DescriptorValidationException, IOException,
 			StructureErrorException, UnSupportProtoFormatErrorException {
 		ProtoFile protoFile = ProtoSchemaParser
 				.parse(getProtoSourceFile(protoFilePath));
 		dynamicSchema = getDynamicSchema(protoFile);
 		buildDmBuilder(protoFile.getTypes());
+		avroSchema = new Schema.Parser().parse(getAvscSourceFile(avscFilePath));
+	}
+
+	public GenericRecord protoToAvro(DynamicMessage msg)
+			throws InvalidProtocolBufferException,
+			UnSupportProtoFormatErrorException {
+		GenericRecord gr = new GenericData.Record(avroSchema);
+		protoMsgToAvroRecord(msg, gr, avroSchema);
+		return gr;
+	}
+
+	private void protoMsgToAvroRecord(Message msg, GenericRecord gr,
+			Schema parentSchema) throws InvalidProtocolBufferException,
+			UnSupportProtoFormatErrorException {
+		for (Map.Entry<FieldDescriptor, Object> entry : msg.getAllFields()
+				.entrySet()) {
+			String fieldName = entry.getKey().getName();
+			putToRecord(gr, entry.getKey(), entry.getValue(), fieldName,
+					parentSchema);
+		}
+
+	}
+
+	private void putToRecord(GenericRecord gr, FieldDescriptor fd,
+			Object value, String nestedField, Schema parentSchema)
+			throws InvalidProtocolBufferException,
+			UnSupportProtoFormatErrorException {
+		String name = fd.getName();
+		if (!fd.isRepeated()) {
+			gr.put(name, getSingleField(fd, value, parentSchema));
+		} else {
+			List<?> list = (List<?>) value;
+			Schema nestedSchema = parentSchema.getField(nestedField).schema();
+			GenericArray<Object> grA = new GenericData.Array<Object>(
+					list.size(), nestedSchema);
+			for (Object element : list) {
+				grA.add(getSingleField(fd, element, nestedSchema));
+			}
+			gr.put(name, grA);
+		}
+	}
+
+	private GenericRecord nestedMsgToRecord(Message msg, String nestedField,
+			Schema parentSchema) throws InvalidProtocolBufferException,
+			UnSupportProtoFormatErrorException {
+		GenericRecord gr = new GenericData.Record(parentSchema.getField(
+				nestedField).schema());
+		protoMsgToAvroRecord(msg, gr, parentSchema);
+		return gr;
+	}
+	
+	private GenericRecord nestedMsgToRecord(Message msg,
+			Schema schema) throws InvalidProtocolBufferException,
+			UnSupportProtoFormatErrorException {
+		GenericRecord gr = new GenericData.Record(schema);
+		protoMsgToAvroRecord(msg, gr, schema);
+		return gr;
+	}
+
+	private Object getSingleField(FieldDescriptor field, Object value,
+			Schema parentSchema) throws InvalidProtocolBufferException,
+			UnSupportProtoFormatErrorException {
+		Object result = null;
+		switch (field.getType()) {
+		case INT32:
+		case SINT32:
+		case SFIXED32:
+			result = (Integer) value;
+			break;
+
+		case INT64:
+		case SINT64:
+		case SFIXED64:
+			result = (Long) value;
+			break;
+
+		case BOOL:
+			result = (Boolean) value;
+			break;
+
+		case FLOAT:
+			result = (Float) value;
+			break;
+
+		case DOUBLE:
+			result = (Double) value;
+			break;
+
+		case UINT32:
+		case FIXED32:
+			result = (Integer) value;
+			break;
+
+		case UINT64:
+		case FIXED64:
+			result = (Long) value;
+			break;
+		case STRING:
+			result = (String) value;
+			break;
+		case ENUM:
+			GenericEnumSymbol gEnum = new GenericData.EnumSymbol(parentSchema
+					.getField(field.getName()).schema(),
+					((EnumValueDescriptor) value).getName());
+			result = gEnum;
+			break;
+
+		case MESSAGE:
+		case GROUP:
+			Schema eleSchema = parentSchema.getElementType();
+			if (eleSchema != null) {
+				GenericRecord nestedGr = nestedMsgToRecord((Message) value,
+						eleSchema);
+				result = nestedGr;
+			} else {
+				GenericRecord nestedGr = nestedMsgToRecord((Message) value,
+						field.getName(), parentSchema);
+				result = nestedGr;
+			}
+
+			break;
+		case BYTES:
+			result = (byte[]) value;
+			break;
+		}
+
+		return result;
 	}
 
 	public DynamicMessage parse(byte[] msg)
@@ -68,8 +195,10 @@ public class ProtoSchema {
 		DynamicMessage.Builder properBuilder = null;
 		for (DynamicMessage.Builder untestedBuilder : dMBuilder) {
 			properBuilder = testDmBuilder(untestedBuilder, msg);
-			if(properBuilder != null) break;
+			if (properBuilder != null)
+				break;
 		}
+		msgBuilder = properBuilder;
 		return properBuilder;
 	}
 
@@ -180,15 +309,28 @@ public class ProtoSchema {
 		return enumBuilder.build();
 	}
 
-	private File getProtoSourceFile(String path) {
-		File protof = null;
+	private File getAvscSourceFile(String path) {
+		File avsc = null;
 		try {
-			protof = new File(path);
+			avsc = new File(path);
 		} catch (Exception ex) {
-			System.out.println("unable to access proto file with exception:"
+			System.out.println("unable to access avsc file with exception:"
 					+ ex.getMessage());
 		}
-		return protof;
+		return avsc;
+	}
+
+	private File getAvscSourceFile() {
+		File avsc = null;
+		ClassLoader classLoader = getClass().getClassLoader();
+		try {
+			avsc = new File(classLoader.getResource("addressbook.avsc")
+					.getFile());
+		} catch (Exception ex) {
+			System.out.println("unable to access avsc file with exception:"
+					+ ex.getMessage());
+		}
+		return avsc;
 	}
 
 	private File getProtoSourceFile() {
@@ -197,6 +339,17 @@ public class ProtoSchema {
 		try {
 			protof = new File(classLoader.getResource("addressbook.proto")
 					.getFile());
+		} catch (Exception ex) {
+			System.out.println("unable to access proto file with exception:"
+					+ ex.getMessage());
+		}
+		return protof;
+	}
+
+	private File getProtoSourceFile(String path) {
+		File protof = null;
+		try {
+			protof = new File(path);
 		} catch (Exception ex) {
 			System.out.println("unable to access proto file with exception:"
 					+ ex.getMessage());
