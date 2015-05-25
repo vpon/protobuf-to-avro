@@ -2,6 +2,5 @@
 Goal:
 parse protocol buffer message by dynamic .proto file then convert to avro message
 
-but still work...
-now I am working on 
-parse protocol buffer message by dynamic .proto file
+The prototye is finished !!
+now you could reference source code to convert protobuf to avro in Main
