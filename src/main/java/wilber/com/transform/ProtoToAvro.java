@@ -3,7 +3,6 @@ package wilber.com.transform;
 import com.github.os72.protobuf.dynamic.DynamicSchema;
 import com.github.os72.protobuf.dynamic.EnumDefinition;
 import com.github.os72.protobuf.dynamic.MessageDefinition;
-import com.google.protobuf.ByteString;
 import com.google.protobuf.DynamicMessage;
 import com.google.protobuf.Message;
 import com.google.protobuf.Descriptors.DescriptorValidationException;
@@ -14,9 +13,7 @@ import com.squareup.protoparser.*;
 
 import java.io.File;
 import java.io.IOException;
-import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -33,7 +30,6 @@ public class ProtoToAvro {
 	private ProtoFile protoFile = null;
 	private List<DynamicMessage.Builder> dMBuilder = new ArrayList<DynamicMessage.Builder>();
 	private Schema avroSchema = null;
-	private DynamicMessage.Builder msgBuilder = null;
 
 	public ProtoToAvro() throws DescriptorValidationException, IOException,
 			StructureErrorException, UnSupportProtoFormatErrorException {
@@ -100,9 +96,9 @@ public class ProtoToAvro {
 		protoMsgToAvroRecord(msg, gr, parentSchema);
 		return gr;
 	}
-	
-	private GenericRecord nestedMsgToRecord(Message msg,
-			Schema schema) throws InvalidProtocolBufferException,
+
+	private GenericRecord nestedMsgToRecord(Message msg, Schema schema)
+			throws InvalidProtocolBufferException,
 			UnSupportProtoFormatErrorException {
 		GenericRecord gr = new GenericData.Record(schema);
 		protoMsgToAvroRecord(msg, gr, schema);
@@ -117,38 +113,19 @@ public class ProtoToAvro {
 		case INT32:
 		case SINT32:
 		case SFIXED32:
-			result = (Integer) value;
-			break;
-
 		case INT64:
 		case SINT64:
 		case SFIXED64:
-			result = (Long) value;
-			break;
-
 		case BOOL:
-			result = (Boolean) value;
-			break;
-
 		case FLOAT:
-			result = (Float) value;
-			break;
-
 		case DOUBLE:
-			result = (Double) value;
-			break;
-
 		case UINT32:
 		case FIXED32:
-			result = (Integer) value;
-			break;
-
 		case UINT64:
 		case FIXED64:
-			result = (Long) value;
-			break;
 		case STRING:
-			result = (String) value;
+		case BYTES:
+			result = value;
 			break;
 		case ENUM:
 			GenericEnumSymbol gEnum = new GenericData.EnumSymbol(parentSchema
@@ -170,9 +147,6 @@ public class ProtoToAvro {
 				result = nestedGr;
 			}
 
-			break;
-		case BYTES:
-			result = (byte[]) value;
 			break;
 		}
 
@@ -198,7 +172,6 @@ public class ProtoToAvro {
 			if (properBuilder != null)
 				break;
 		}
-		msgBuilder = properBuilder;
 		return properBuilder;
 	}
 
@@ -234,7 +207,7 @@ public class ProtoToAvro {
 			throws IOException, StructureErrorException,
 			UnSupportProtoFormatErrorException, DescriptorValidationException {
 		DynamicSchema.Builder schemaBuilder = DynamicSchema.newBuilder();
-
+		
 		schemaBuilder.setName(protoFile.getFileName());
 		schemaBuilder.setPackage(protoFile.getPackageName());
 
@@ -324,8 +297,14 @@ public class ProtoToAvro {
 		File avsc = null;
 		ClassLoader classLoader = getClass().getClassLoader();
 		try {
-			avsc = new File(classLoader.getResource("addressbook.avsc")
-					.getFile());
+			File[] sourceFolderFiles = new File(classLoader.getResource("")
+					.getFile()).listFiles();
+			for (File file : sourceFolderFiles) {
+				if (file.getName().contains(".avsc")) {
+					avsc = file;
+					break;
+				}
+			}
 		} catch (Exception ex) {
 			System.out.println("unable to access avsc file with exception:"
 					+ ex.getMessage());
@@ -337,8 +316,14 @@ public class ProtoToAvro {
 		File protof = null;
 		ClassLoader classLoader = getClass().getClassLoader();
 		try {
-			protof = new File(classLoader.getResource("addressbook.proto")
-					.getFile());
+			File[] sourceFolderFiles = new File(classLoader.getResource("")
+					.getFile()).listFiles();
+			for (File file : sourceFolderFiles) {
+				if (file.getName().contains(".proto")) {
+					protof = file;
+					break;
+				}
+			}
 		} catch (Exception ex) {
 			System.out.println("unable to access proto file with exception:"
 					+ ex.getMessage());

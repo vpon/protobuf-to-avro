@@ -1,5 +1,7 @@
 package wilber.com.transform;
 
+import java.util.Arrays;
+
 import org.apache.avro.generic.GenericRecord;
 
 import com.example.tutorial.AddressBookProtos.Person;
@@ -18,9 +20,13 @@ public class Main {
 					.addPhone(
 							Person.PhoneNumber.newBuilder()
 									.setNumber("555-4321")
-									.setType(Person.PhoneType.HOME)).build();
+									.setType(Person.PhoneType.MOBILE)).build();
+
+			System.out.println("static message parse:\n"
+					+ Person.parseFrom(john.toByteArray()));
 
 			ProtoToAvro protoSchema = new ProtoToAvro();
+			// read .proto and .avsc from source folder
 
 			DynamicMessage msg = protoSchema.parse(john.toByteArray());
 			System.out.println("dynamic message parse:\n" + msg);
