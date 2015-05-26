@@ -31,7 +31,7 @@ public class ProtoToAvro {
 	private Schema avroSchema = null;
 
 	public ProtoToAvro() throws DescriptorValidationException, IOException,
-			StructureErrorException, UnSupportProtoFormatErrorException {
+			StructureException, UnSupportProtoFormatErrorException {
 		protoFile = ProtoSchemaParser.parse(getProtoSourceFile());
 		dynamicSchema = getDynamicSchema(protoFile);
 		avroSchema = new Schema.Parser().parse(getAvscSourceFile());
@@ -39,7 +39,7 @@ public class ProtoToAvro {
 
 	public ProtoToAvro(String protoFilePath, String avscFilePath)
 			throws DescriptorValidationException, IOException,
-			StructureErrorException, UnSupportProtoFormatErrorException {
+			StructureException, UnSupportProtoFormatErrorException {
 		protoFile = ProtoSchemaParser.parse(getProtoSourceFile(protoFilePath));
 		dynamicSchema = getDynamicSchema(protoFile);
 		avroSchema = new Schema.Parser().parse(getAvscSourceFile(avscFilePath));
@@ -191,7 +191,7 @@ public class ProtoToAvro {
 	}
 
 	private DynamicSchema getDynamicSchema(ProtoFile protoFile)
-			throws IOException, StructureErrorException,
+			throws IOException, StructureException,
 			UnSupportProtoFormatErrorException, DescriptorValidationException {
 		DynamicSchema.Builder schemaBuilder = DynamicSchema.newBuilder();
 
