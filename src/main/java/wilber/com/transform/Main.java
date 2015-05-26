@@ -27,7 +27,7 @@ public class Main {
 
 			ProtoToAvro protoSchema = new ProtoToAvro();
 			// read .proto and .avsc from source folder
-
+		
 			DynamicMessage msg = protoSchema.parse(john.toByteArray());
 			System.out.println("dynamic message parse:\n" + msg);
 

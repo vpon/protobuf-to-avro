@@ -28,24 +28,20 @@ public class ProtoToAvro {
 
 	private DynamicSchema dynamicSchema = null;
 	private ProtoFile protoFile = null;
-	private List<DynamicMessage.Builder> dMBuilder = new ArrayList<DynamicMessage.Builder>();
 	private Schema avroSchema = null;
 
 	public ProtoToAvro() throws DescriptorValidationException, IOException,
 			StructureErrorException, UnSupportProtoFormatErrorException {
-		ProtoFile protoFile = ProtoSchemaParser.parse(getProtoSourceFile());
+		protoFile = ProtoSchemaParser.parse(getProtoSourceFile());
 		dynamicSchema = getDynamicSchema(protoFile);
-		buildDmBuilder(protoFile.getTypes());
 		avroSchema = new Schema.Parser().parse(getAvscSourceFile());
 	}
 
 	public ProtoToAvro(String protoFilePath, String avscFilePath)
 			throws DescriptorValidationException, IOException,
 			StructureErrorException, UnSupportProtoFormatErrorException {
-		ProtoFile protoFile = ProtoSchemaParser
-				.parse(getProtoSourceFile(protoFilePath));
+		protoFile = ProtoSchemaParser.parse(getProtoSourceFile(protoFilePath));
 		dynamicSchema = getDynamicSchema(protoFile);
-		buildDmBuilder(protoFile.getTypes());
 		avroSchema = new Schema.Parser().parse(getAvscSourceFile(avscFilePath));
 	}
 
@@ -57,16 +53,25 @@ public class ProtoToAvro {
 		return gr;
 	}
 
+	public DynamicMessage parse(byte[] msg)
+			throws InvalidProtocolBufferException,
+			UnSupportProtoFormatErrorException {
+		DynamicMessage.Builder msgBuilder = getProperDmBuilder(msg);
+		if (msgBuilder == null)
+			throw new UnSupportProtoFormatErrorException(
+					"cannot find proper schema for this protocol buffer message,"
+							+ " maybe provide worng schema file");
+
+		return msgBuilder.mergeFrom(msg).build();
+	}
+
 	private void protoMsgToAvroRecord(Message msg, GenericRecord gr,
 			Schema parentSchema) throws InvalidProtocolBufferException,
 			UnSupportProtoFormatErrorException {
 		for (Map.Entry<FieldDescriptor, Object> entry : msg.getAllFields()
-				.entrySet()) {
-			String fieldName = entry.getKey().getName();
-			putToRecord(gr, entry.getKey(), entry.getValue(), fieldName,
-					parentSchema);
-		}
-
+				.entrySet())
+			putToRecord(gr, entry.getKey(), entry.getValue(), entry.getKey()
+					.getName(), parentSchema);
 	}
 
 	private void putToRecord(GenericRecord gr, FieldDescriptor fd,
@@ -153,34 +158,25 @@ public class ProtoToAvro {
 		return result;
 	}
 
-	public DynamicMessage parse(byte[] msg)
-			throws InvalidProtocolBufferException,
-			UnSupportProtoFormatErrorException {
-		DynamicMessage.Builder msgBuilder = getProperDmBuilder(msg);
-		if (msgBuilder == null)
-			throw new UnSupportProtoFormatErrorException(
-					"cannot find proper schema for this protocol buffer message,"
-							+ " maybe provide worng schema file");
-
-		return msgBuilder.mergeFrom(msg).build();
-	}
-
 	private DynamicMessage.Builder getProperDmBuilder(byte[] msg) {
 		DynamicMessage.Builder properBuilder = null;
-		for (DynamicMessage.Builder untestedBuilder : dMBuilder) {
-			properBuilder = testDmBuilder(untestedBuilder, msg);
-			if (properBuilder != null)
-				break;
+		for (Type type : protoFile.getTypes()) {
+			if (type instanceof MessageType) {
+				properBuilder = testDmBuilder(type.getName(), msg);
+				if (properBuilder != null)
+					break;
+			}
 		}
 		return properBuilder;
 	}
 
-	private DynamicMessage.Builder testDmBuilder(
-			DynamicMessage.Builder testBuilder, byte[] msg) {
+	private DynamicMessage.Builder testDmBuilder(String testName, byte[] testMsg) {
 		DynamicMessage.Builder properBuilder = null;
 		try {
-			testBuilder.mergeFrom(msg);
-			properBuilder = testBuilder;
+			DynamicMessage.Builder testBuilder = dynamicSchema
+					.newMessageBuilder(testName);
+			testBuilder.mergeFrom(testMsg);
+			properBuilder = testBuilder.clear();
 		} catch (InvalidProtocolBufferException e) {
 			e.printStackTrace(System.out);
 		}
@@ -195,19 +191,11 @@ public class ProtoToAvro {
 		return protoFile;
 	}
 
-	private void buildDmBuilder(List<Type> types) {
-		for (Type type : types) {
-			if (type instanceof MessageType) {
-				dMBuilder.add(dynamicSchema.newMessageBuilder(type.getName()));
-			}
-		}
-	}
-
 	private DynamicSchema getDynamicSchema(ProtoFile protoFile)
 			throws IOException, StructureErrorException,
 			UnSupportProtoFormatErrorException, DescriptorValidationException {
 		DynamicSchema.Builder schemaBuilder = DynamicSchema.newBuilder();
-		
+
 		schemaBuilder.setName(protoFile.getFileName());
 		schemaBuilder.setPackage(protoFile.getPackageName());
 
