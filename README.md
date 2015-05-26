@@ -14,31 +14,30 @@ And you need to make sure these two schema structure are identical, otherwise it
 Example:
 ```java
 try {
-			Person john = Person
-					.newBuilder()
-					.setId(1234)
-					.setName("John Doe")
-					.setEmail("jdoe@example.com")
-					.addPhone(
-							Person.PhoneNumber.newBuilder()
-									.setNumber("555-4321")
-									.setType(Person.PhoneType.MOBILE)).build();
+    Person john = Person
+		.newBuilder()
+		.setId(1234)
+		.setName("John Doe")
+		.setEmail("jdoe@example.com")
+		.addPhone(
+			Person.PhoneNumber.newBuilder()
+				.setNumber("555-4321")
+				.setType(Person.PhoneType.MOBILE)).build();
 
-			System.out.println("static message parse:\n"
-					+ Person.parseFrom(john.toByteArray()));
+	System.out.println("static message parse:\n" + Person.parseFrom(john.toByteArray()));
 
-			ProtoToAvro protoSchema = new ProtoToAvro();
-			// read .proto and .avsc from source folder, and usw them them to build dynamic schema for converting
+	// read .proto and .avsc from source folder, and use them them to build dynamic schema for converting
+	ProtoToAvro protoSchema = new ProtoToAvro();
 		
-			DynamicMessage msg = protoSchema.parse(john.toByteArray());
-			System.out.println("dynamic message parse:\n" + msg);
+	DynamicMessage msg = protoSchema.parse(john.toByteArray());
+	System.out.println("dynamic message parse:\n" + msg);
 
-			GenericRecord gr = protoSchema.protoToAvro(msg);
-			System.out.println("transform proto to avro:\n" + gr.toString());
+	GenericRecord gr = protoSchema.protoToAvro(msg);
+	System.out.println("transform proto to avro:\n" + gr.toString());
 
-		} catch (Exception ex) {
-			System.out.println("catch error with:\n" + ex.toString());
-			ex.printStackTrace(System.out);
-		}
-```   
+} catch (Exception ex) {
+	ex.printStackTrace(System.out);
+}
+```
+   
 If any question , feel free to contact me:cecol3500123@gmail.com

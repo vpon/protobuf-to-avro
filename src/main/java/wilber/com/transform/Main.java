@@ -1,7 +1,5 @@
 package wilber.com.transform;
 
-import java.util.Arrays;
-
 import org.apache.avro.generic.GenericRecord;
 
 import com.example.tutorial.AddressBookProtos.Person;
@@ -25,9 +23,9 @@ public class Main {
 			System.out.println("static message parse:\n"
 					+ Person.parseFrom(john.toByteArray()));
 
-			ProtoToAvro protoSchema = new ProtoToAvro();
 			// read .proto and .avsc from source folder
-		
+			ProtoToAvro protoSchema = new ProtoToAvro();
+
 			DynamicMessage msg = protoSchema.parse(john.toByteArray());
 			System.out.println("dynamic message parse:\n" + msg);
 
@@ -35,7 +33,6 @@ public class Main {
 			System.out.println("transform proto to avro:\n" + gr.toString());
 
 		} catch (Exception ex) {
-			System.out.println("catch error with:\n" + ex.toString());
 			ex.printStackTrace(System.out);
 		}
 	}
