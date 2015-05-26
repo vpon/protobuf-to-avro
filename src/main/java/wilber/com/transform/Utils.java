@@ -3,25 +3,46 @@ package wilber.com.transform;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.avro.Schema.Type;
+import org.apache.avro.Schema;
+
+import com.squareup.protoparser.EnumType;
+
 public class Utils {
 
-	static public final Map<String, String> ProtoBufPrimitiveTypeMap = new HashMap<String, String>() {
+	static public final Map<String, Schema.Type> ProtoBufPrimitiveTypeMap = new HashMap<String, Schema.Type>() {
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 4300028261621141009L;
+
 		{
-			put("double", "double");
-			put("float", "float");
-			put("int32", "int");
-			put("int64", "long");
-			put("uint32", "int");
-			put("uint64", "long");
-			put("sint32", "int");
-			put("sint64", "long");
-			put("fixed32", "int");
-			put("fix64", "long");
-			put("sfix32", "ing");
-			put("sfix64", "long");
-			put("bool", "boolean");
-			put("string", "string");
-			put("bytes", "bytes");
+			put("double", Type.DOUBLE);
+			put("float", Type.FLOAT);
+			put("int32", Type.INT);
+			put("int64", Type.LONG);
+			put("uint32", Type.INT);
+			put("uint64", Type.LONG);
+			put("sint32", Type.INT);
+			put("sint64", Type.LONG);
+			put("fixed32", Type.INT);
+			put("fix64", Type.LONG);
+			put("sfix32", Type.INT);
+			put("sfix64", Type.LONG);
+			put("bool", Type.BOOLEAN);
+			put("string", Type.STRING);
+			put("bytes", Type.BYTES);
 		}
 	};
+	
+	public static String getProtoDefault(Object defaultValue) {
+		String defaultString = null;
+
+		if (defaultValue instanceof EnumType.Value) {
+			defaultString = ((EnumType.Value) defaultValue).getName();
+		} else {
+			defaultString = (String) defaultValue;
+		}
+		return defaultString;
+	}
 }

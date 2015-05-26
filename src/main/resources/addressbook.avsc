@@ -10,7 +10,7 @@
      				"items": {  "type": "record", "name": "PhoneNumber",
      					"fields" : [{"name": "number", "type": "string"},
                 						{"name": "type", "type":{"type": "enum", "name": "PhoneType", 
-                    							"symbols": ["MOBILE","HOME","WORK"] },
+                    											 "symbols": ["MOBILE","HOME","WORK"] },
                  						"default": "HOME"}]}}
      }
  ]
