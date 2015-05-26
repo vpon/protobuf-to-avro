@@ -64,6 +64,14 @@ public class ProtoToAvro {
 
 		return msgBuilder.mergeFrom(msg).build();
 	}
+	
+	public DynamicSchema getDynamicSchema() {
+		return dynamicSchema;
+	}
+
+	public ProtoFile getProtoFile() {
+		return protoFile;
+	}
 
 	private void protoMsgToAvroRecord(Message msg, GenericRecord gr,
 			Schema parentSchema) throws InvalidProtocolBufferException,
@@ -160,13 +168,12 @@ public class ProtoToAvro {
 
 	private DynamicMessage.Builder getProperDmBuilder(byte[] msg) {
 		DynamicMessage.Builder properBuilder = null;
-		for (Type type : protoFile.getTypes()) {
+		for (Type type : protoFile.getTypes())
 			if (type instanceof MessageType) {
 				properBuilder = testDmBuilder(type.getName(), msg);
 				if (properBuilder != null)
 					break;
 			}
-		}
 		return properBuilder;
 	}
 
@@ -181,14 +188,6 @@ public class ProtoToAvro {
 			e.printStackTrace(System.out);
 		}
 		return properBuilder;
-	}
-
-	public DynamicSchema getDynamicSchema() {
-		return dynamicSchema;
-	}
-
-	public ProtoFile getProtoFile() {
-		return protoFile;
 	}
 
 	private DynamicSchema getDynamicSchema(ProtoFile protoFile)
