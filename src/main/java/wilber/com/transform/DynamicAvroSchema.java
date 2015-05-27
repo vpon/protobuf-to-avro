@@ -32,11 +32,14 @@ public class DynamicAvroSchema {
 
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		sb.append("AVRO Schema:\n");
-		for (Map.Entry entry : avroSchemaMap.entrySet()) {
-			sb.append("Schema name: " + entry.getKey() + "\nSchema structure: "
-					+ entry.getValue() + "\n");
-		}
+		if (avroSchemaMap.size() > 0) {
+			sb.append("AVRO Schema:\n");
+			for (Map.Entry entry : avroSchemaMap.entrySet()) {
+				sb.append("Schema name: " + entry.getKey()
+						+ "\nSchema structure: " + entry.getValue() + "\n");
+			}
+		} else
+			sb.append("you never build any avro schema");
 		return sb.toString();
 	}
 
@@ -87,11 +90,13 @@ public class DynamicAvroSchema {
 			} else {
 				fieldSchema = getProperSchema(fieldType);
 			}
-			if (field.getLabel().equals("repeated")) {
+			if (field.getLabel().toString().toLowerCase()
+					.equals(Utils.BROTOBUF_REPEATED)) {
 				// protobuf repeat correspond to avro array
 				fieldSchema = Schema.createArray(fieldSchema);
 			}
-			if (field.getLabel().equals("repeated")) {
+			if (field.getLabel().toString().toLowerCase()
+					.equals(Utils.BROTOBUF_OPTIONAL)) {
 				// protobuf optional correspond to avro union with null
 				fieldSchema = getOptionSchema(fieldSchema);
 			}

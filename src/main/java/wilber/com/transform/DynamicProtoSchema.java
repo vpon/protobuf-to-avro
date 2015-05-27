@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Locale;
 
+import org.javatuples.Pair;
+
 import com.github.os72.protobuf.dynamic.DynamicSchema;
 import com.github.os72.protobuf.dynamic.EnumDefinition;
 import com.github.os72.protobuf.dynamic.MessageDefinition;
@@ -22,55 +24,51 @@ public class DynamicProtoSchema {
 	private ProtoFile protoFile = null;
 
 	public DynamicProtoSchema() throws DescriptorValidationException,
-			IOException, StructureException, UnSupportProtoFormatErrorException {
+			IOException, StructureException, UnSupportProtoFormatException {
 		protoFile = ProtoSchemaParser.parse(getProtoSourceFile());
 		dynamicSchema = getDynamicSchema(protoFile);
 	}
 
 	public DynamicProtoSchema(String protoFilePath)
 			throws DescriptorValidationException, IOException,
-			StructureException, UnSupportProtoFormatErrorException {
+			StructureException, UnSupportProtoFormatException {
 		protoFile = ProtoSchemaParser.parse(getProtoSourceFile(protoFilePath));
 		dynamicSchema = getDynamicSchema(protoFile);
 	}
 
 	public DynamicMessage parse(byte[] msg)
 			throws InvalidProtocolBufferException,
-			UnSupportProtoFormatErrorException {
-		DynamicMessage.Builder msgBuilder = getProperDmBuilder(msg);
-		if (msgBuilder == null)
-			throw new UnSupportProtoFormatErrorException(
+			UnSupportProtoFormatException {
+		DynamicMessage dMsg = getProperDmBuilder(msg);
+		if (dMsg == null)
+			throw new UnSupportProtoFormatException(
 					"cannot find proper schema for this protocol buffer message,"
 							+ " maybe provide worng schema file");
 
-		return msgBuilder.mergeFrom(msg).build();
+		return dMsg;
 	}
 
-	public String toString() {
-		StringBuilder sb = new StringBuilder();
-		sb.append("Protocol buffer Schema:\n");
-		sb.append(dynamicSchema.toString());
-		return sb.toString();
-	}
-
-	private DynamicMessage.Builder getProperDmBuilder(byte[] msg) {
-		DynamicMessage.Builder properBuilder = null;
+	private DynamicMessage getProperDmBuilder(byte[] msg) {
+		DynamicMessage properBuilder = null;
+		String name = null;
 		for (Type type : protoFile.getTypes())
 			if (type instanceof MessageType) {
 				properBuilder = testDmBuilder(type.getName(), msg);
-				if (properBuilder != null)
+				if (properBuilder != null) {
+					name = type.getName();
 					break;
+				}
 			}
 		return properBuilder;
 	}
 
-	private DynamicMessage.Builder testDmBuilder(String testName, byte[] testMsg) {
-		DynamicMessage.Builder properBuilder = null;
+	private DynamicMessage testDmBuilder(String testName, byte[] testMsg) {
+		DynamicMessage properBuilder = null;
 		try {
 			DynamicMessage.Builder testBuilder = dynamicSchema
 					.newMessageBuilder(testName);
 			testBuilder.mergeFrom(testMsg);
-			properBuilder = testBuilder.clear();
+			properBuilder = testBuilder.build();
 		} catch (InvalidProtocolBufferException e) {
 			e.printStackTrace(System.out);
 		}
@@ -87,7 +85,7 @@ public class DynamicProtoSchema {
 
 	private DynamicSchema getDynamicSchema(ProtoFile protoFile)
 			throws IOException, StructureException,
-			UnSupportProtoFormatErrorException, DescriptorValidationException {
+			UnSupportProtoFormatException, DescriptorValidationException {
 		DynamicSchema.Builder schemaBuilder = DynamicSchema.newBuilder();
 
 		schemaBuilder.setName(protoFile.getFileName());
@@ -191,5 +189,12 @@ public class DynamicProtoSchema {
 					+ ex.getMessage());
 		}
 		return protof;
+	}
+
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("Protocol buffer Schema:\n");
+		sb.append(dynamicSchema.toString());
+		return sb.toString();
 	}
 }

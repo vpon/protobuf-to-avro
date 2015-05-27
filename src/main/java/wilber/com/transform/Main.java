@@ -3,6 +3,7 @@ package wilber.com.transform;
 import java.util.Map;
 
 import org.apache.avro.Schema;
+import org.apache.avro.generic.GenericRecord;
 
 import com.example.tutorial.AddressBookProtos.Person;
 import com.google.protobuf.DynamicMessage;
@@ -20,7 +21,11 @@ public class Main {
 					.addPhone(
 							Person.PhoneNumber.newBuilder()
 									.setNumber("555-4321")
-									.setType(Person.PhoneType.MOBILE)).build();
+									.setType(Person.PhoneType.MOBILE))
+					.addPhone(
+							Person.PhoneNumber.newBuilder()
+									.setNumber("123-456798")
+									.setType(Person.PhoneType.WORK)).build();
 
 			System.out.println("static message parse:\n"
 					+ Person.parseFrom(john.toByteArray()));
@@ -29,13 +34,19 @@ public class Main {
 			DynamicProtoSchema dynamicProtoSchema = new DynamicProtoSchema();
 
 			DynamicMessage msg = dynamicProtoSchema.parse(john.toByteArray());
-			//System.out.println("dynamic message parse:\n" + msg);
+			System.out.println("\ndynamic message parse:\n" + msg);
 
 			DynamicAvroSchema dynamicAvroSchema = new DynamicAvroSchema();
-			dynamicAvroSchema.buildSchemaByProtoSchema(dynamicProtoSchema.getProtoFile());
+			dynamicAvroSchema.buildSchemaByProtoSchema(dynamicProtoSchema
+					.getProtoFile());
 
-			//System.out.println(dynamicAvroSchema.toString());
-			//System.out.println(dynamicProtoSchema.toString());
+			ProtoToAvroTransformer protoToAvroTransformer = new ProtoToAvroTransformer(
+					dynamicAvroSchema.getAvroSchemaMap());
+
+			// System.out.println(dynamicAvroSchema.toString());
+			// System.out.println(dynamicProtoSchema.toString());
+			GenericRecord gr = protoToAvroTransformer.protoToAvro(msg);
+			System.out.println("get transform avro record:\n" + gr);
 
 		} catch (Exception ex) {
 			ex.printStackTrace(System.out);
