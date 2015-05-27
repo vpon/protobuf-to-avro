@@ -33,7 +33,7 @@ public class DynamicProtoSchema {
 		protoFile = ProtoSchemaParser.parse(getProtoSourceFile(protoFilePath));
 		dynamicSchema = getDynamicSchema(protoFile);
 	}
-	
+
 	public DynamicMessage parse(byte[] msg)
 			throws InvalidProtocolBufferException,
 			UnSupportProtoFormatErrorException {
@@ -45,7 +45,14 @@ public class DynamicProtoSchema {
 
 		return msgBuilder.mergeFrom(msg).build();
 	}
-	
+
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("Protocol buffer Schema:\n");
+		sb.append(dynamicSchema.toString());
+		return sb.toString();
+	}
+
 	private DynamicMessage.Builder getProperDmBuilder(byte[] msg) {
 		DynamicMessage.Builder properBuilder = null;
 		for (Type type : protoFile.getTypes())

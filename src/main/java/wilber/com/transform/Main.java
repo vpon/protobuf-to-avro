@@ -1,5 +1,9 @@
 package wilber.com.transform;
 
+import java.util.Map;
+
+import org.apache.avro.Schema;
+
 import com.example.tutorial.AddressBookProtos.Person;
 import com.google.protobuf.DynamicMessage;
 
@@ -25,10 +29,13 @@ public class Main {
 			DynamicProtoSchema dynamicProtoSchema = new DynamicProtoSchema();
 
 			DynamicMessage msg = dynamicProtoSchema.parse(john.toByteArray());
-			System.out.println("dynamic message parse:\n" + msg);
+			//System.out.println("dynamic message parse:\n" + msg);
 
-			//GenericRecord gr = protoSchema.protoToAvro(msg);
-			//System.out.println("transform proto to avro:\n" + gr.toString());
+			DynamicAvroSchema dynamicAvroSchema = new DynamicAvroSchema();
+			dynamicAvroSchema.buildSchemaByProtoSchema(dynamicProtoSchema.getProtoFile());
+
+			//System.out.println(dynamicAvroSchema.toString());
+			//System.out.println(dynamicProtoSchema.toString());
 
 		} catch (Exception ex) {
 			ex.printStackTrace(System.out);
