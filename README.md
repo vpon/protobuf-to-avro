@@ -9,35 +9,44 @@ protobuf-to-avro
 ---  
 
 #### Usage
-Before you use it, you need to provide .proto and .avsc schema file(put in source folder under maven project or provide file path).  
-And you need to make sure these two schema structure are identical, otherwise it will throw structure error exception.  
+Before you use it, you need to provide .proto schema file(put in source folder under maven project or provide file path).    
 Example:
 ```java
 try {
-    Person john = Person
+	Person john = Person
 		.newBuilder()
 		.setId(1234)
 		.setName("John Doe")
 		.setEmail("jdoe@example.com")
 		.addPhone(
-			Person.PhoneNumber.newBuilder()
-				.setNumber("555-4321")
-				.setType(Person.PhoneType.MOBILE)).build();
+				Person.PhoneNumber.newBuilder()
+					.setNumber("555-4321")
+					.setType(Person.PhoneType.MOBILE)
+		.addPhone(
+				Person.PhoneNumber.newBuilder()
+					.setNumber("123-456798")
+					.setType(Person.PhoneType.WORK)).build();
 
-	System.out.println("static message parse:\n" + Person.parseFrom(john.toByteArray()));
+		System.out.println("static message parse:\n"
+				+ Person.parseFrom(john.toByteArray()));
 
-	// read .proto and .avsc from source folder, and use them them to build dynamic schema for converting
-	ProtoToAvro protoSchema = new ProtoToAvro();
-		
-	DynamicMessage msg = protoSchema.parse(john.toByteArray());
-	System.out.println("dynamic message parse:\n" + msg);
+		// read .proto and .avsc from source folder
+		DynamicProtoSchema dynamicProtoSchema = new DynamicProtoSchema();
 
-	GenericRecord gr = protoSchema.protoToAvro(msg);
-	System.out.println("transform proto to avro:\n" + gr.toString());
+		DynamicMessage msg = dynamicProtoSchema.parse(john.toByteArray());
+		System.out.println("\ndynamic message parse:\n" + msg);
 
-} catch (Exception ex) {
-	ex.printStackTrace(System.out);
-}
+		DynamicAvroSchema dynamicAvroSchema = new DynamicAvroSchema();
+		dynamicAvroSchema.buildSchemaByProtoSchema(dynamicProtoSchema
+			.getProtoFile());
+
+		ProtoToAvroTransformer protoToAvroTransformer = new ProtoToAvroTransformer(
+			dynamicAvroSchema.getAvroSchemaMap());
+
+		// System.out.println(dynamicAvroSchema.toString());
+		// System.out.println(dynamicProtoSchema.toString());
+		GenericRecord gr = protoToAvroTransformer.protoToAvro(msg);
+		System.out.println("get transform avro record:\n" + gr);
 ```
    
 If any question , feel free to contact me:cecol3500123@gmail.com
